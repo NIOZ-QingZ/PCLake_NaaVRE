@@ -22,7 +22,7 @@
 ##~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 ## source helper functions
-source(paste(dirHome, "PCModel1350/PCModel/3.00/Models/PCLake+/6.13.16/PCShell/scripts/R_system/functions.R", sep="")) 
+source(paste(dirHome, "PCModel1350/PCModel/3.00/Models/PCLake+/6.13.16/PCShell/scripts/R_system/functions.r", sep="")) 
 
 ## load necessary packages 
 loadPackage("deSolve") ## load this before compilation, otherwise you can get namespace errors
