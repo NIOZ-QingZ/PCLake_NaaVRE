@@ -1,3 +1,14 @@
+#==================================================================================================
+# SECTION GENERAL
+#
+#  DESCRIPTION:
+#    This file contains general functions
+#
+# two modifications for NaaVRE by Stanley & Qing
+# Remove --arch x64 within lines 11-18
+# Shared object in Linux, Replace .dll with .so
+#==================================================================================================
+
 ##~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 ## PCLake(S)+ base/helper functions
 ##
@@ -357,7 +368,12 @@ RunModel <- function(states,
                      internal_time_step, 
                      dirMODEL) {
   
-  dyn.load(file.path(dirMODEL, "model.dll"))
+  # dyn.load(file.path(dirMODEL, "model.dll"))
+  if(.Platform$OS.type == "unix"){
+    dyn.load(file.path(dirMODEL, "model.so"))
+  } else if (.Platform$OS.type == "windows"){
+    dyn.load(file.path(dirMODEL, "model.dll"))
+  }
   
   # solve differential equations 	
   if (integrator %in% c("rk2","rk23","rk23bs","rk34f","rk45f","rk45ck",
@@ -413,7 +429,13 @@ RunModel <- function(states,
   # store output (only for selected state variables and auxiliaries)
   outC <- outC[, c(1, which(colnames(outC) %in% c(state_names, aux_names)))]
   
-  dyn.unload(file.path(dirMODEL, "model.dll"))
+  # dyn.unload(file.path(dirMODEL, "model.dll"))
+  if(.Platform$OS.type == "unix"){
+    dyn.unload(file.path(dirMODEL, "model.so"))
+  } else if (.Platform$OS.type == "windows"){
+    dyn.unload(file.path(dirMODEL, "model.dll"))
+  }
+  
   # return(assign("outC", outC, envir = .GlobalEnv))
   return(outC)
 }

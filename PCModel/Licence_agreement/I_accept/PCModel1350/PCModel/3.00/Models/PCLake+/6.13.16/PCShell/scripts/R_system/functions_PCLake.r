@@ -1,3 +1,14 @@
+#==================================================================================================
+# SECTION GENERAL
+#
+#  DESCRIPTION:
+#    This file contains general functions
+#
+# two modifications for NaaVRE by Stanley & Qing
+# Remove --arch x64 within lines 11-18
+# Shared object in Linux, Replace .dll with .so
+#==================================================================================================
+
 ##~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 ## SECTION SPECIFIC
 ##
@@ -1630,7 +1641,14 @@ PCModelCompileModelWorkCase <- function(dirSHELL, nameWORKCASE) {
   
   setwd(dir_MODEL_adj)
   # system("compile_model_cpp.cmd", show.output.on.console = T, invisible = FALSE) ## testing 
-  file.remove("model.o", "model.dll")
+  if(.Platform$OS.type == "unix"){
+    file.remove("model.o")
+    file.remove("model.so")
+  } else if(.Platform$OS.type == "windows"){
+    file.remove("model.o")
+    file.remove("model.dll")
+  }
+  # file.remove("model.o", "model.dll")
   # file.remove("model.dll")
   # system("R CMD SHLIB model.cpp") 
   out <- system("R CMD SHLIB model.cpp", intern=TRUE)
@@ -1697,7 +1715,13 @@ PCModelInitializeModel <- function(lDATM = NULL,
   dfSTATES_RESULTS <- as.data.frame(dfSTATES[, which(colnames(dfSTATES) %in% c('iReportState','sInitialStateName'))])
   
   ## load initial states calculation
-  dyn.load(file.path(dir_DLL, "model.dll"))
+  if(.Platform$OS.type == "unix"){
+    dyn.load(file.path(dir_DLL, "model.so"))
+  } else if (.Platform$OS.type == "windows"){
+    dyn.load(file.path(dir_DLL, "model.dll"))
+  }
+  
+  # dyn.load(file.path(dir_DLL, "model.dll"))
   ini <- function(parm, y, nr_of_states){.C("InitializeModel", param = parm, initState = y, state = double(nr_of_states))}
   
   ## loop over all runs in the dfRUN_SETTINGS
@@ -1725,7 +1749,12 @@ PCModelInitializeModel <- function(lDATM = NULL,
     
   }
   
-  dyn.unload(file.path(dir_DLL, "model.dll")) ## decouple model.dll
+  # dyn.unload(file.path(dir_DLL, "model.dll")) ## decouple model.dll
+  if(.Platform$OS.type == "unix"){
+    dyn.unload(file.path(dir_DLL, "model.so"))
+  } else if (.Platform$OS.type == "windows"){
+    dyn.unload(file.path(dir_DLL, "model.dll"))
+  }
   
   return(dfSTATES_RESULTS)
 }
@@ -1816,12 +1845,23 @@ PCModelInitializeModel_PCLakeSplus <- function(lDATM = NULL,
   
   
   ## load initial states calculation & calculate the initial states
-  dyn.load(file.path(dir_DLL, "model.dll"))
+  # dyn.load(file.path(dir_DLL, "model.dll"))
+  if(.Platform$OS.type == "unix"){
+    dyn.load(file.path(dir_DLL, "model.so"))
+  } else if (.Platform$OS.type == "windows"){
+    dyn.load(file.path(dir_DLL, "model.dll"))
+  }
+  
   ini <- function(parm, y, nr_of_states){.C("InitializeModel", param = parm, initState = y, state = double(nr_of_states))}
   calc_inits <- ini(vPARAMS, vSTATES, nrow(dfSTATES_RESULTS))
   dfSTATES_RESULTS <- cbind.data.frame(dfSTATES_RESULTS, initStates = calc_inits$state)
   
-  dyn.unload(file.path(dir_DLL, "model.dll")) ## decouple model.dll
+  # dyn.unload(file.path(dir_DLL, "model.dll")) ## decouple model.dll
+  if(.Platform$OS.type == "unix"){
+    dyn.unload(file.path(dir_DLL, "model.so")) ## decouple model.dll
+  } else if (.Platform$OS.type == "windows"){
+    dyn.unload(file.path(dir_DLL, "model.dll")) ## decouple model.dll
+  }
   
   return(dfSTATES_RESULTS)
 }
