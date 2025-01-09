@@ -1,0 +1,19 @@
+######################################
+PCShell (cpp) version 1.0
+Author: Luuk van Gerven (NIOO)
+######################################
+
+start time: 2024-12-11 16:26:50.263163
+
+initializing......
+Reading DATM excel input from file /home/jovyan/PCModel/Licence_agreement/I_accept/PCModel1350/PCModel/3.00/Models/PCLake/6.13.16/PL613162.xls
+- reading run settings
+- pass run settings to c++ files (the model)
+- prepare model for compilation
+- compile model
+- initialize model
+Initials recorded for Set_0
+Initials recorded for Set_1
+Initials recorded for Set_2
+Initials recorded for Set_3
+end of PCShell at: 2024-12-11 16:28:09.515234

@@ -1,0 +1,1 @@
+RunId Time	_sO2W_	_sDPhytW_	_sDPhytS_	_sDElod_	_sDChar_	_sDCera_	_sDLemn_	_sDNymp_	_sDHelo_	_sPLemn_	_sNLemn_	_oDPhytW_	_oPPhytW_	_oNH4S_	_oO2W_	_wPOutflTot_	_wNOutflTot_	_tPDifPO4_	_tNDifNO3_	_tNDifNH4_	_aCovLemn_	_rPDLemn_	_rNDLemn_	_tDMigrLemn_	_tPMigrLemn_	_tNMigrLemn_	_oChla_	_aSecchi_	-1
