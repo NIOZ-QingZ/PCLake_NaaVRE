@@ -317,16 +317,6 @@ id             <- grep(x=model_base_cpp,pattern="output_auxiliaries")
 codelines      <- vector()
 aux_number     <- length(aux_names)
 i              <- 0
-if (length(aux_names)>0) {
-   for (aux_name in aux_names) { # define user-defined output auxiliaries as output_auxiliaries
-	 codelines <- c(codelines,paste("  yout[",i,"] = ",aux_name,";",sep="")) 
-     i <- i + 1
-   }
-} else { # if there are no output auxiliaries; make at least one 'dummy' output auxiliary, as desired by DeSolve
-   codelines   <- "  yout[0]=0;"
-   aux_number  <- 1
-   aux_names   <- "dummy"
-   aux_units   <- "-"
-}
+
 
 
