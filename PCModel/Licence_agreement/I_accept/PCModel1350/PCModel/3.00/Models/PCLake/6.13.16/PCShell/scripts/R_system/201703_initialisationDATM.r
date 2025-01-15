@@ -310,3 +310,45 @@ writeLines(arrays,paste(Dir_source_adjusted,"arrays.cpp",sep="")) # write length
 WriteLogFile(LogFile,ln="- prepare model for compilation")
 model_base_cpp <- readLines(paste(dir_SCHIL,"scripts/cpp2R/model_base.cpp",sep="")) # read the c++ model
 
+# --------------------------------------------------------------
+# 1. define output auxiliaries
+# --------------------------------------------------------------
+id             <- grep(x=model_base_cpp,pattern="output_auxiliaries")
+codelines      <- vector()
+aux_number     <- length(aux_names)
+i              <- 0
+if (length(aux_names)>0) {
+   for (aux_name in aux_names) { # define user-defined output auxiliaries as output_auxiliaries
+	 codelines <- c(codelines,paste("  yout[",i,"] = ",aux_name,";",sep="")) 
+     i <- i + 1
+   }
+} else { # if there are no output auxiliaries; make at least one 'dummy' output auxiliary, as desired by DeSolve
+   codelines   <- "  yout[0]=0;"
+   aux_number  <- 1
+   aux_names   <- "dummy"
+   aux_units   <- "-"
+}
+model_cpp <- c(model_base_cpp[1:(id-1)],codelines,model_base_cpp[(id+1):length(model_base_cpp)])
+cat(model_cpp, "\n")
+
+# --------------------------------------------------------------
+# 2. define forcing functions 
+# --------------------------------------------------------------
+id        <- grep(x=model_cpp,pattern="input_forcings")
+codelines <- paste("static double forc[",(1+length(vFORCING_NAMES)),"];",sep="")
+codelines <- c(codelines,"double &time = forc[0];") # define time as an external forcing
+i         <- 0
+for (name in vFORCING_NAMES) { # define user-defined forcings as external forcings
+   i         <- i + 1
+   codelines <- c(codelines,paste("double &",name," = forc[",i,"];",sep=""))
+}
+codelines <- c(codelines,paste("#define MAXFORC ",(1+length(vFORCING_NAMES)),sep=""))
+model_cpp <- c(model_cpp[1:(id-1)],codelines,model_cpp[(id+1):length(model_cpp)])
+
+# --------------------------------------------------------------
+# 3. refer to the right cpp files (in source_cpp/)
+# --------------------------------------------------------------
+cpp_files     <- list.files(paste(dir_SCEN,"source_cpp/",sep=""),pattern=".cpp")
+stop_id       <- regexpr(pattern="...cpp",cpp_files[1])[[1]]-1
+model_version <- substr(cpp_files[1],start=1,stop=stop_id) #get model version
+model_cpp     <- sub(pattern="model_version", replacement=model_version, x=model_cpp) # insert model version into c++ file
