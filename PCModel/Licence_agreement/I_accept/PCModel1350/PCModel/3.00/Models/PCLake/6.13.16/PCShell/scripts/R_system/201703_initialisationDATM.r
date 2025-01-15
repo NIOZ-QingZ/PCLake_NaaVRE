@@ -328,6 +328,5 @@ if (length(aux_names)>0) {
    aux_names   <- "dummy"
    aux_units   <- "-"
 }
-model_cpp <- c(model_base_cpp[1:(id-1)],codelines,model_base_cpp[(id+1):length(model_base_cpp)])
-cat(model_cpp, "\n")
+
 
