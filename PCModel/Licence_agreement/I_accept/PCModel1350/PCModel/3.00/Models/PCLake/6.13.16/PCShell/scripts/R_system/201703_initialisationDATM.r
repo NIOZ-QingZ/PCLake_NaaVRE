@@ -345,10 +345,3 @@ for (name in vFORCING_NAMES) { # define user-defined forcings as external forcin
 codelines <- c(codelines,paste("#define MAXFORC ",(1+length(vFORCING_NAMES)),sep=""))
 model_cpp <- c(model_cpp[1:(id-1)],codelines,model_cpp[(id+1):length(model_cpp)])
 
-# --------------------------------------------------------------
-# 3. refer to the right cpp files (in source_cpp/)
-# --------------------------------------------------------------
-cpp_files     <- list.files(paste(dir_SCEN,"source_cpp/",sep=""),pattern=".cpp")
-stop_id       <- regexpr(pattern="...cpp",cpp_files[1])[[1]]-1
-model_version <- substr(cpp_files[1],start=1,stop=stop_id) #get model version
-model_cpp     <- sub(pattern="model_version", replacement=model_version, x=model_cpp) # insert model version into c++ file
