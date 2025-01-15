@@ -356,13 +356,3 @@ model_cpp     <- sub(pattern="model_version", replacement=model_version, x=model
 # write the final model_cpp to file
 writeLines(model_cpp,paste(dir_SCHIL,"scripts/cpp2R/model.cpp",sep=""))
 
-# ****************************************
-# ----------------------------------------
-# compile cpp model (model.dll is created)
-# ----------------------------------------
-# ****************************************
-WriteLogFile(LogFile,ln="- compile model")
-#beTime <- Sys.time()
-CompileModel()
-#compTime <- Sys.time()-beTime
-
