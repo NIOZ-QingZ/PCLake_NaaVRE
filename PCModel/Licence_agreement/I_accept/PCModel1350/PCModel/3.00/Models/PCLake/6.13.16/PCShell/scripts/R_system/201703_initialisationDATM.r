@@ -313,7 +313,7 @@ model_base_cpp <- readLines(paste(dir_SCHIL,"scripts/cpp2R/model_base.cpp",sep="
 # --------------------------------------------------------------
 # 1. define output auxiliaries
 # --------------------------------------------------------------
-
+idx             <- grep(x=model_base_cpp,pattern="output_auxiliaries")
 codelines      <- vector()
 aux_number     <- length(aux_names)
 i              <- 0
