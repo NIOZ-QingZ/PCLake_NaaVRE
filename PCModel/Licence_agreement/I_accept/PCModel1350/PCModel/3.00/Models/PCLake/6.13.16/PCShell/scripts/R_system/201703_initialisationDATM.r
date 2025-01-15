@@ -317,6 +317,73 @@ idx             <- grep(x=model_base_cpp,pattern="output_auxiliaries")
 codelines      <- vector()
 aux_number     <- length(aux_names)
 i              <- 0
+if (length(aux_names)>0) {
+   for (aux_name in aux_names) { # define user-defined output auxiliaries as output_auxiliaries
+	 codelines <- c(codelines,paste("  yout[",i,"] = ",aux_name,";",sep="")) 
+     i <- i + 1
+   }
+} else { # if there are no output auxiliaries; make at least one 'dummy' output auxiliary, as desired by DeSolve
+   codelines   <- "  yout[0]=0;"
+   aux_number  <- 1
+   aux_names   <- "dummy"
+   aux_units   <- "-"
+}
+model_cpp <- c(model_base_cpp[1:(idx-1)],codelines,model_base_cpp[(idx+1):length(model_base_cpp)])
+cat(model_cpp, "\n")
+
+# --------------------------------------------------------------
+# 2. define forcing functions 
+# --------------------------------------------------------------
+idx        <- grep(x=model_cpp,pattern="input_forcings")
+codelines <- paste("static double forc[",(1+length(vFORCING_NAMES)),"];",sep="")
+codelines <- c(codelines,"double &time = forc[0];") # define time as an external forcing
+i         <- 0
+for (name in vFORCING_NAMES) { # define user-defined forcings as external forcings
+   i         <- i + 1
+   codelines <- c(codelines,paste("double &",name," = forc[",i,"];",sep=""))
+}
+codelines <- c(codelines,paste("#define MAXFORC ",(1+length(vFORCING_NAMES)),sep=""))
+model_cpp <- c(model_cpp[1:(idx-1)],codelines,model_cpp[(idx+1):length(model_cpp)])
+
+# --------------------------------------------------------------
+# 3. refer to the right cpp files (in source_cpp/)
+# --------------------------------------------------------------
+cpp_files     <- list.files(paste(dir_SCEN,"source_cpp/",sep=""),pattern=".cpp")
+stop_id       <- regexpr(pattern="...cpp",cpp_files[1])[[1]]-1
+model_version <- substr(cpp_files[1],start=1,stop=stop_id) #get model version
+model_cpp     <- sub(pattern="model_version", replacement=model_version, x=model_cpp) # insert model version into c++ file
+
+# write the final model_cpp to file
+writeLines(model_cpp,paste(dir_SCHIL,"scripts/cpp2R/model.cpp",sep=""))
+
+# ****************************************
+# ----------------------------------------
+# compile cpp model (model.dll is created)
+# ----------------------------------------
+# ****************************************
+WriteLogFile(LogFile,ln="- compile model")
+#beTime <- Sys.time()
+CompileModel()
+#compTime <- Sys.time()-beTime
 
 
+# ***********************************************************************************
+# -----------------------------------------------------------------------------------
+# convert time series of forcing function to input format of DeSolve + set integrator
+# -----------------------------------------------------------------------------------
+# ***********************************************************************************
 
+# define run time and output time step
+times 			<- seq(0,365*runtime_years,by=output_time_step)  # output time step
+times_forcing   <- seq(0,365*runtime_years)
+# define forcing functions
+forcings <- list(time=cbind("time"=times_forcing,"value"=times_forcing))
+for (name in vFORCING_NAMES) {
+   tmp <- subset(data_forcing,subset=(forcing==name))
+   tmp_int <- approx(x=tmp$time,y=tmp$value,xout=times_forcing, method="linear",rule = 2:1) #interpolate missing day values linearly
+   if (any(is.na(tmp_int$y))) WriteLogFileError(LogFile,ln=paste("Time series of forcing function '",name,"' is not defined for total run time of the model (",max(times_forcing)," days) (see Input_PCShell.xls/time_series_model_forcings.csv)",sep="")) 
+   forcings <- c(forcings,list(forcing=cbind("time"=times_forcing,"value"=tmp_int$y)))
+}   
+# define integrator that is used to solve the differential equations
+integrators <- c("euler","rk2","rk4","rk23","rk23bs","rk34f","rk45f","rk45ck","rk45e","rk45dp6","rk45dp7","rk78dp","rk78f","lsoda","lsode","lsodes","lsodar","vode","daspk","ode23","ode45","radau","bdf","bdf_d","adams","impAdams","impAdams_d","iteration")
+integrator_method <- integrators[integrator]
