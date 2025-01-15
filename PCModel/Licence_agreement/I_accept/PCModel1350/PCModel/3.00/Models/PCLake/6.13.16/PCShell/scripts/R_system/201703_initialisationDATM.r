@@ -199,4 +199,103 @@ pars_to_change <- c(
  	#InitCalc = 1 #strongly recommended if initial state is changed
 )
 
+# -----------------------------------------------------------
+# 4. forcing functions to be imposed on the model 
+# -----------------------------------------------------------
+
+# define forcing functions to impose on the model
+#---Setup forcing function data from DATM excel
+vFORCINGS_READ	=	rowSums(dfPARAMS[grep(x=rownames(dfPARAMS), pattern="Read"),-1])
+vFORCING_NAMES	=	GetForcing(imposed_forcings=vFORCINGS_READ)
+if(length(vFORCING_NAMES)>0){
+	dfFORCING_TIME	=	readWorksheet(wbDATM, sheet=vFORCING_NAMES[1], startRow=1, startCol=1,endCol=1)
+	#read.xlsx2(file=path_DATM, sheetName=vFORCING_NAMES[1], startRow=1, colIndex=1, as.data.frame=TRUE, header=TRUE)
+	dfFORCINGS		=	data.frame(matrix(NA,nrow(dfFORCING_TIME)-1,0))
+	dfFORCINGS		=	cbind.data.frame(dfFORCINGS, day=as.numeric(as.character(unlist(dfFORCING_TIME[-nrow(dfFORCING_TIME),]))))
+	for(sNAME in vFORCING_NAMES){
+		dfFORCING		=	readWorksheet(wbDATM, sheet=sNAME, startRow=1, startCol=2,endCol=2)
+		#read.xlsx2(file=path_DATM, sheetName=sNAME, startRow=1, colIndex=2, as.data.frame=TRUE, header=TRUE)
+		dfFORCING		=	as.numeric(as.character(unlist(dfFORCING)))
+		dfFORCINGS		=	cbind.data.frame(dfFORCINGS, dfFORCING)
+	}
+	colnames(dfFORCINGS)	=	c("day",vFORCING_NAMES)
+	# read time series of forcings 
+	names_forcing		=	vFORCING_NAMES
+	data_forcing        <- melt(dfFORCINGS,id="day",measure=names(dfFORCINGS)[2:ncol(dfFORCINGS)])[,c(2,1,3)]
+	names(data_forcing) <- c("forcing","time","value")
+}else{
+	dfFORCINGS		=		NA
+	data_forcing	=		data.frame(matrix(NA,0,3))
+	names(data_forcing) <- c("forcing","time","value")
+}
+
+
+# -----------------------------------------------------------
+# 5. define output variables (states and auxilaries)
+# -----------------------------------------------------------
+
+#extract states to output
+if(tGENERATE_INIT==TRUE){
+	state_names =	rownames(dfSTATES)
+	aux_names 	=	rownames(dfAUXIL)
+}else{
+	state_names =	rownames(dfSTATES[which(dfSTATES[,1]==1),,drop=F])
+	aux_names 	=	rownames(dfAUXIL[which(dfAUXIL[,1]==1),,drop=F])
+}
+
+# ****************************************************************************************************************************************************
+# ----------------------------------------------------------------------------------------------------------------------------------------------------
+# edit c++ files from PCLake/PCDitch (created by OSIRIS)
+# 1. set changed parameters: 
+#       - user-defined parameters
+#       - sediment type parameters
+#       - forcing function parameters (switches, e.g. ReadTemp)
+# 2. set (user-defined) changed initial conditions 
+# 3. edit declaration files:
+#       - remove forcing function parameters (e.g. mTemp) from declaration list to prevent double declarations (as both a parameter and a time series)
+#       - determine the length of the declaration arrays and store them
+# ----------------------------------------------------------------------------------------------------------------------------------------------------
+# ****************************************************************************************************************************************************
+
+WriteLogFile(LogFile,ln="- pass run settings to c++ files (the model)")
+cpp_files          <- list.files(paste(dir_SCEN,"source_cpp/",sep=""),pattern=".cpp")
+arrays             <- vector()
+for (cpp_file in cpp_files) {
+  tmp <- readLines(paste(dir_SCEN,"source_cpp/",cpp_file,sep=""))
+  # 1. set changed parameters
+  if (grepl("sp",cpp_file)) {
+     tmp <- SetParameters(tmp,pars_to_change)   #set user-defined parameters
+     tmp <- SetParameters(tmp,soil_param)       #set sediment type
+     tmp <- SetParameters(tmp,vFORCINGS_READ) 	#set forcing function parameters
+  }
+  # 2. set (user-defined) changed initial conditions 
+  if (grepl("sc",cpp_file)) { 
+     if (length(inits_to_change) > 0) {
+        temp <- inits_to_change
+        names(temp) <- paste("c",substr(names(temp),start=2,stop=nchar(names(temp))),"0",sep="") #change names of initial states (e.g. change 'sDepthW' in 'cDepthW0')
+        tmp <- SetParameters(tmp,temp)   #set user-defined initial conditions
+     }
+  }
+  # 3. edit declaration files  
+  if (grepl("rp",cpp_file)) { 
+     i <- 0
+	 for (name in vFORCING_NAMES) {
+        i   <- i + 1
+		tmp <- gsub(paste("_",name,"_",sep=""),paste("_dummy",i,"_",sep=""),tmp) # remove forcing function parameters (e.g. mTemp) from parameter declaration list
+	 }
+  }
+  if ((grepl("ra",cpp_file) || grepl("rp",cpp_file) || grepl("rs",cpp_file) || grepl("ri",cpp_file))) {  # determine the length of the declaration arrays and store them
+     array_name <- substring(tmp[1], regexpr("=", tmp[1])[1]+2, regexpr("\\[", tmp[1])[1]-1)
+	 array_length <- strsplit(tmp[length(tmp)]," ")[[1]][3]
+     if (grepl("rs",cpp_file)) n_states <- as.numeric(array_length)
+	 arrays <- c(arrays,paste("static double ",array_name,"[",array_length,"];",sep=""))
+  }
+  # 4. remove underscores (otherwise R cannot read it) and write adjusted cpp files to file  
+  tmp <- gsub("_","",tmp) #remove underscores
+  writeLines(tmp,paste(Dir_source_adjusted,cpp_file,sep=""))
+
+  # 5. miscellaneous
+  if (grepl("sp",cpp_file))  ConvertFileToVector(paste(Dir_source_adjusted,cpp_file,sep=""),"ref_pars")              # get reference parameters (stored in 'ref_pars')
+}
+writeLines(arrays,paste(Dir_source_adjusted,"arrays.cpp",sep="")) # write length of declaration arrays to file
 
