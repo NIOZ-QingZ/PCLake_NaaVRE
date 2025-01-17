@@ -82,7 +82,7 @@ RunModel <- function(states,times_output,parms,forcings,aux_number,aux_names,int
   # store output (only for selected state variables and auxiliaries)
   outC <- outC[,c(1,which(colnames(outC) %in% c(state_names,aux_names)))]
 
-  # if(.Platform$OS.type == "unix") dyn.unload("model.so") else if(.Platform$OS.type == "windows") dyn.unload("model.dll")
+  if(.Platform$OS.type == "unix") dyn.unload("model.so") else if(.Platform$OS.type == "windows") dyn.unload("model.dll")
   # dyn.unload("model.dll")
   return(assign("outC", outC, envir=.GlobalEnv))
 }
