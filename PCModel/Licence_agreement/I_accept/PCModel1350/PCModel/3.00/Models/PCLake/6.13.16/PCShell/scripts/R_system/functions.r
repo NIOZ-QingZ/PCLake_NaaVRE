@@ -41,7 +41,7 @@ InitializeModel <- function(number_of_states, vSTATES_LIST) {
   # make vector with initial values of state variables
   states <- inits$state #get initial values of state variables
   names(states) <- gsub(" ","",tmp) # combine name and value
-  if(.Platform$OS.type == "unix") dyn.unload("model.so") else if(.Platform$OS.type == "windows") dyn.unload("model.dll")
+  # if(.Platform$OS.type == "unix") dyn.unload("model.so") else if(.Platform$OS.type == "windows") dyn.unload("model.dll")
   # dyn.unload("model.dll")
   return(assign("states", states, envir=.GlobalEnv))
 }
