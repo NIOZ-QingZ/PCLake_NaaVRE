@@ -32,7 +32,7 @@ InitializeModel <- function(number_of_states, vSTATES_LIST) {
   }
   initStates=vSTATES_LIST
 
-  if(.Platform$OS.type == "unix") dyn.load("model.so") else if (.Platform$OS.type == "windows") dyn.load("model.dll")
+  if(.Platform$OS.type == "unix") dyn.load("model.so", local =TRUE) else if (.Platform$OS.type == "windows") dyn.load("model.dll", local =TRUE)
 
   ini <- function(y, nr_of_states){
 	 .C("InitializeModel",  initState=y, state=double(nr_of_states))
@@ -67,7 +67,7 @@ InitializeModel_MultiThread <- function(number_of_states) {
 }
 
 RunModel <- function(states,times_output,parms,forcings,aux_number,aux_names,integrator,state_names,internal_time_step) {
-    if(.Platform$OS.type == "unix") dyn.load("model.so") else if(.Platform$OS.type == "windows") dyn.load("model.dll")
+    if(.Platform$OS.type == "unix") dyn.load("model.so", local =TRUE) else if(.Platform$OS.type == "windows") dyn.load("model.dll", local =TRUE)
     # dyn.load("model.dll")
   
   # solve differential equations 	
